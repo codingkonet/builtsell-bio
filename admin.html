@@ -132,6 +132,15 @@
       <div class="btnrow"><button class="btn" id="add-proj">+ Add project</button></div>
     </section>
 
+    <!-- SHOP -->
+    <section class="card">
+      <h2>Products & Services (Shop)</h2>
+      <p class="hint">Sell digital products and services. The <b>Buy now</b> button links to your payment page — paste a Stripe Payment Link, Gumroad, Lemon Squeezy, PayPal, or Paystack URL. Leave it blank to show "Coming soon".</p>
+      <div class="field" style="max-width:280px"><label>Section heading</label><input id="shopTitle" placeholder="Shop" /></div>
+      <div id="prod-list"></div>
+      <div class="btnrow"><button class="btn" id="add-prod">+ Add product / service</button></div>
+    </section>
+
     <!-- SOCIALS -->
     <section class="card">
       <h2>Social & Contact</h2>
@@ -237,8 +246,10 @@
       set('s_linkedin', data.socials.linkedin === '#' ? '' : data.socials.linkedin || '');
       set('s_whatsapp', data.socials.whatsapp || '');
       set('s_email', data.socials.email || '');
+      set('shopTitle', data.shopTitle || 'Shop');
       renderLinks();
       renderProjects();
+      renderProducts();
     }
 
     const iconOptions = ICON_KEYS.map(k => `<option value="${k}">${k}</option>`).join('');
@@ -289,6 +300,40 @@
         </div>`).join('');
     }
 
+    function renderProducts() {
+      const list = document.getElementById('prod-list');
+      list.innerHTML = data.products.map((p, i) => `
+        <div class="item" data-i="${i}">
+          <div class="item-head">
+            <span class="grip">Item ${i + 1}</span>
+            <button class="btn sm" data-act="dup" data-i="${i}">↑</button>
+            <button class="btn sm" data-act="ddown" data-i="${i}">↓</button>
+            <button class="btn sm danger" data-act="del-prod" data-i="${i}">Delete</button>
+          </div>
+          <div class="row">
+            <div class="field"><label>Name</label><input data-df="name" data-i="${i}" value="${attr(p.name)}" /></div>
+            <div class="field"><label>Type</label>
+              <select data-df="type" data-i="${i}">
+                <option>Digital Product</option>
+                <option>Service</option>
+                <option>Template</option>
+                <option>Course</option>
+                <option>Subscription</option>
+                <option>Consultation</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Description</label><textarea data-df="description" data-i="${i}">${attr(p.description)}</textarea></div>
+          <div class="row3">
+            <div class="field"><label>Price (any text)</label><input data-df="price" data-i="${i}" value="${attr(p.price)}" placeholder="$49 / From $499 / Free" /></div>
+            <div class="field" style="grid-column:span 2"><label>Buy / payment link</label><input data-df="buyUrl" data-i="${i}" value="${attr(p.buyUrl)}" placeholder="https://buy.stripe.com/… (blank = Coming soon)" /></div>
+          </div>
+          <div class="field"><label>Image URL (optional)</label><input data-df="image" data-i="${i}" value="${attr(p.image)}" placeholder="https://…" /></div>
+        </div>`).join('');
+      // set selected type values
+      data.products.forEach((p, i) => { const sel = list.querySelector(`select[data-df="type"][data-i="${i}"]`); if (sel) sel.value = p.type || 'Digital Product'; });
+    }
+
     /* ---------- Collect form -> data ---------- */
     function collect() {
       data.brand.name = val('b_name');
@@ -297,6 +342,7 @@
       data.brand.logoImage = val('b_logoImage');
       data.brand.tagline = val('b_tagline');
       data.pills = val('b_pills').split(',').map(s => s.trim()).filter(Boolean);
+      data.shopTitle = val('shopTitle') || 'Shop';
 
       data.socials.instagram = val('s_instagram') || '#';
       data.socials.x = val('s_x') || '#';
@@ -311,6 +357,10 @@
       document.querySelectorAll('#proj-list [data-pf]').forEach(el => {
         const i = +el.dataset.i, f = el.dataset.pf;
         data.projects[i][f] = el.value;
+      });
+      document.querySelectorAll('#prod-list [data-df]').forEach(el => {
+        const i = +el.dataset.i, f = el.dataset.df;
+        data.products[i][f] = el.value;
       });
     }
 
@@ -329,17 +379,27 @@
       dirty();
     });
 
+    document.getElementById('add-prod').addEventListener('click', () => {
+      collect();
+      data.products.push({ id: uid('d'), name: 'New Product', type: 'Digital Product', price: '', description: '', image: '', buyUrl: '' });
+      renderProducts();
+      dirty();
+    });
+
     document.getElementById('panel').addEventListener('click', e => {
       const act = e.target.dataset.act; if (!act) return;
       const i = +e.target.dataset.i;
       collect();
       if (act === 'del-link') data.links.splice(i, 1);
       if (act === 'del-proj') data.projects.splice(i, 1);
+      if (act === 'del-prod') data.products.splice(i, 1);
       if (act === 'up' && i > 0) swap(data.links, i, i - 1);
       if (act === 'down' && i < data.links.length - 1) swap(data.links, i, i + 1);
       if (act === 'pup' && i > 0) swap(data.projects, i, i - 1);
       if (act === 'pdown' && i < data.projects.length - 1) swap(data.projects, i, i + 1);
-      renderLinks(); renderProjects(); dirty();
+      if (act === 'dup' && i > 0) swap(data.products, i, i - 1);
+      if (act === 'ddown' && i < data.products.length - 1) swap(data.products, i, i + 1);
+      renderLinks(); renderProjects(); renderProducts(); dirty();
     });
 
     document.getElementById('save').addEventListener('click', async () => {

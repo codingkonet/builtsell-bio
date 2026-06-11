@@ -28,6 +28,11 @@ const DEFAULTS = {
     { id: 'p2', title: 'SaaS Dashboard', category: 'Web App', description: 'Analytics dashboard with real-time charts and auth.', image: '', url: '#' },
     { id: 'p3', title: 'Restaurant Site', category: 'Website', description: 'Fast marketing site with online ordering.', image: '', url: '#' }
   ],
+  shopTitle: 'Shop',
+  products: [
+    { id: 'd1', name: 'Landing Page Template', type: 'Digital Product', price: '$49', description: 'Production-ready HTML/CSS template you can deploy in minutes.', image: '', buyUrl: '' },
+    { id: 'd2', name: 'Website Build', type: 'Service', price: 'From $499', description: 'Custom marketing website designed and built for your brand.', image: '', buyUrl: '' }
+  ],
   socials: {
     instagram: '#',
     x: '#',
