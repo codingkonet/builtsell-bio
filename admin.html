@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BuiltSELL — Admin Panel</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0f1a; --panel: #121829; --card: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.12); --text: #f4f6fb; --muted: #9aa6c2;
+    --accent: #5b8cff; --accent-2: #7c5bff; --danger: #ff5b6e; --ok: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background:
+      radial-gradient(900px 500px at 100% -10%, rgba(124,91,255,0.18), transparent 55%), var(--bg);
+    color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; background: rgba(11,15,26,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+  .topbar .logo { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-size: 14px; }
+  .topbar h1 { font-size: 16px; font-weight: 700; }
+  .topbar .grow { flex: 1; }
+  .topbar .status { font-size: 12px; color: var(--muted); }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 24px 20px 80px; display: flex; flex-direction: column; gap: 22px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .card .hint { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+  input, textarea, select {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-family: inherit; font-size: 14px; outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 64px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .field { margin-bottom: 14px; }
+  .check { display: flex; align-items: center; gap: 8px; }
+  .check input { width: auto; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; font-weight: 600;
+    font-size: 13px; cursor: pointer; transition: all 0.15s ease; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; }
+  .btn.danger { color: var(--danger); border-color: rgba(255,91,110,0.4); }
+  .btn.sm { padding: 6px 10px; font-size: 12px; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+  .item { border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; background: var(--card); }
+  .item .item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .item .item-head .grip { color: var(--muted); font-size: 13px; flex: 1; font-weight: 600; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ok); color: #04241a; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Gate */
+  .gate { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 100; padding: 20px; }
+  .gate .box { width: 100%; max-width: 340px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; text-align: center; }
+  .gate .box h2 { font-size: 18px; margin-bottom: 6px; }
+  .gate .box p { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+  .tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); font-weight: 700; }
+</style>
+</head>
+<body>
+
+  <!-- Supabase email/password login -->
+  <div class="gate" id="gate">
+    <div class="box">
+      <div class="logo" style="width:48px;height:48px;border-radius:12px;display:grid;place-items:center;margin:0 auto 14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:800;">BS</div>
+      <h2>Admin Login</h2>
+      <p id="gate-sub">Sign in to manage your BuiltSELL page.</p>
+      <div class="field"><input type="email" id="email" placeholder="Email" autocomplete="username" /></div>
+      <div class="field"><input type="password" id="pass" placeholder="Password" autocomplete="current-password" /></div>
+      <button class="btn primary" style="width:100%;justify-content:center;" id="unlock">Sign in</button>
+      <p style="margin-top:14px;font-size:11px;" id="gate-note">Create your admin user in Supabase → Authentication → Users.</p>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="logo">BS</div>
+    <h1>BuiltSELL Admin</h1>
+    <div class="grow"></div>
+    <span class="status" id="status">All changes saved</span>
+    <a class="btn sm" href="index.html" target="_blank">View page ↗</a>
+    <button class="btn sm" id="signout" style="display:none">Sign out</button>
+  </div>
+
+  <div class="container" id="panel" style="display:none">
+
+    <!-- BRAND -->
+    <section class="card">
+      <h2>Brand</h2>
+      <p class="hint">Your name, tagline and logo shown at the top of the page.</p>
+      <div class="row">
+        <div class="field"><label>Name (first part)</label><input id="b_name" /></div>
+        <div class="field"><label>Accent word (colored)</label><input id="b_accent" /></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Logo text (initials)</label><input id="b_logoText" maxlength="3" /></div>
+        <div class="field"><label>Logo image URL (optional)</label><input id="b_logoImage" placeholder="https://…" /></div>
+      </div>
+      <div class="field"><label>Tagline</label><textarea id="b_tagline"></textarea></div>
+      <div class="field"><label>Skill pills (comma separated)</label><input id="b_pills" placeholder="Web Development, App Development, …" /></div>
+    </section>
+
+    <!-- LINKS -->
+    <section class="card">
+      <h2>Link Buttons</h2>
+      <p class="hint">The action buttons on your page. Drag order by using the ↑ ↓ controls. Mark one as "primary" to highlight it.</p>
+      <div id="links-list"></div>
+      <div class="btnrow"><button class="btn" id="add-link">+ Add link</button></div>
+    </section>
+
+    <!-- PORTFOLIO -->
+    <section class="card">
+      <h2>Portfolio Projects</h2>
+      <p class="hint">Your work samples shown in the grid. Image URL is optional — leave blank for a colored placeholder.</p>
+      <div id="proj-list"></div>
+      <div class="btnrow"><button class="btn" id="add-proj">+ Add project</button></div>
+    </section>
+
+    <!-- SOCIALS -->
+    <section class="card">
+      <h2>Social & Contact</h2>
+      <p class="hint">Leave blank to hide an icon. Email shows as a mailto link.</p>
+      <div class="row">
+        <div class="field"><label>Instagram URL</label><input id="s_instagram" /></div>
+        <div class="field"><label>X / Twitter URL</label><input id="s_x" /></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>LinkedIn URL</label><input id="s_linkedin" /></div>
+        <div class="field"><label>WhatsApp URL</label><input id="s_whatsapp" placeholder="https://wa.me/…" /></div>
+      </div>
+      <div class="field"><label>Email</label><input id="s_email" placeholder="hello@builtsell.com" /></div>
+    </section>
+
+    <!-- DATA / SETTINGS -->
+    <section class="card">
+      <h2>Data & Settings</h2>
+      <p class="hint"><b>Save changes</b> publishes to Supabase — visitors see updates immediately. Use <b>Export</b> to back content up to a JSON file and <b>Import</b> to restore. <span id="storage-mode"></span></p>
+      <div class="btnrow">
+        <button class="btn primary" id="save">Save & publish</button>
+        <button class="btn" id="export">Export JSON</button>
+        <button class="btn" id="import-btn">Import JSON</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none" />
+        <button class="btn danger" id="reset">Reset to defaults</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    /* ---------- State ---------- */
+    let data = loadData();
+    const usingSupabase = supabaseConfigured();
+
+    /* ---------- Auth gate ---------- */
+    async function enterPanel() {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('panel').style.display = 'flex';
+      document.getElementById('signout').style.display = usingSupabase ? '' : 'none';
+      // Load latest content (Supabase if available, else local)
+      const remote = await fetchRemote();
+      if (remote) data = remote;
+      document.getElementById('storage-mode').textContent = usingSupabase
+        ? 'Connected to Supabase ✓'
+        : 'Supabase not configured — saving to this browser only. Fill in supabase-config.js to go live.';
+      renderAll();
+    }
+
+    async function tryUnlock() {
+      const email = document.getElementById('email').value.trim();
+      const pass = document.getElementById('pass').value;
+      if (usingSupabase) {
+        const { error } = await sb().auth.signInWithPassword({ email, password: pass });
+        if (error) return toast(error.message, true);
+        enterPanel();
+      } else {
+        // offline fallback gate
+        if (pass === (localStorage.getItem('builtsell_pass') || 'builtsell')) enterPanel();
+        else toast('Wrong passcode', true);
+      }
+    }
+
+    document.getElementById('unlock').addEventListener('click', tryUnlock);
+    document.getElementById('pass').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+    document.getElementById('signout').addEventListener('click', async () => {
+      if (usingSupabase) await sb().auth.signOut();
+      location.reload();
+    });
+
+    // If not using Supabase, hide the email field (offline passcode only)
+    if (!usingSupabase) {
+      document.getElementById('email').style.display = 'none';
+      document.getElementById('gate-sub').textContent = 'Enter the passcode to manage your page.';
+      document.getElementById('gate-note').innerHTML = 'Offline mode — default passcode: <b>builtsell</b>. Configure Supabase to enable real accounts & shared publishing.';
+    }
+
+    // Auto-enter if already signed in
+    (async () => {
+      if (usingSupabase) {
+        const { data: s } = await sb().auth.getSession();
+        if (s && s.session) enterPanel();
+      }
+    })();
+
+    /* ---------- Render dynamic lists ---------- */
+    function renderAll() {
+      // Brand
+      set('b_name', data.brand.name);
+      set('b_accent', data.brand.accentWord);
+      set('b_logoText', data.brand.logoText);
+      set('b_logoImage', data.brand.logoImage || '');
+      set('b_tagline', data.brand.tagline);
+      set('b_pills', (data.pills || []).join(', '));
+      // Socials
+      set('s_instagram', data.socials.instagram === '#' ? '' : data.socials.instagram || '');
+      set('s_x', data.socials.x === '#' ? '' : data.socials.x || '');
+      set('s_linkedin', data.socials.linkedin === '#' ? '' : data.socials.linkedin || '');
+      set('s_whatsapp', data.socials.whatsapp || '');
+      set('s_email', data.socials.email || '');
+      renderLinks();
+      renderProjects();
+    }
+
+    const iconOptions = ICON_KEYS.map(k => `<option value="${k}">${k}</option>`).join('');
+
+    function renderLinks() {
+      const list = document.getElementById('links-list');
+      list.innerHTML = data.links.map((l, i) => `
+        <div class="item" data-i="${i}">
+          <div class="item-head">
+            <span class="grip">Link ${i + 1}</span>
+            <button class="btn sm" data-act="up" data-i="${i}">↑</button>
+            <button class="btn sm" data-act="down" data-i="${i}">↓</button>
+            <button class="btn sm danger" data-act="del-link" data-i="${i}">Delete</button>
+          </div>
+          <div class="row">
+            <div class="field"><label>Title</label><input data-f="title" data-i="${i}" value="${attr(l.title)}" /></div>
+            <div class="field"><label>Subtitle</label><input data-f="sub" data-i="${i}" value="${attr(l.sub)}" /></div>
+          </div>
+          <div class="row3">
+            <div class="field" style="grid-column:span 2"><label>URL</label><input data-f="url" data-i="${i}" value="${attr(l.url)}" /></div>
+            <div class="field"><label>Icon</label><select data-f="icon" data-i="${i}">${iconOptions}</select></div>
+          </div>
+          <div class="check"><input type="checkbox" data-f="primary" data-i="${i}" ${l.primary ? 'checked' : ''} id="prim_${i}"><label for="prim_${i}" style="margin:0">Highlight as primary button</label></div>
+        </div>`).join('');
+      // set selected icons
+      data.links.forEach((l, i) => { const sel = list.querySelector(`select[data-i="${i}"]`); if (sel) sel.value = l.icon || 'link'; });
+    }
+
+    function renderProjects() {
+      const list = document.getElementById('proj-list');
+      list.innerHTML = data.projects.map((p, i) => `
+        <div class="item" data-i="${i}">
+          <div class="item-head">
+            <span class="grip">Project ${i + 1}</span>
+            <button class="btn sm" data-act="pup" data-i="${i}">↑</button>
+            <button class="btn sm" data-act="pdown" data-i="${i}">↓</button>
+            <button class="btn sm danger" data-act="del-proj" data-i="${i}">Delete</button>
+          </div>
+          <div class="row">
+            <div class="field"><label>Title</label><input data-pf="title" data-i="${i}" value="${attr(p.title)}" /></div>
+            <div class="field"><label>Category</label><input data-pf="category" data-i="${i}" value="${attr(p.category)}" placeholder="Mobile App / Website…" /></div>
+          </div>
+          <div class="field"><label>Description</label><textarea data-pf="description" data-i="${i}">${attr(p.description)}</textarea></div>
+          <div class="row">
+            <div class="field"><label>Image URL (optional)</label><input data-pf="image" data-i="${i}" value="${attr(p.image)}" placeholder="https://…" /></div>
+            <div class="field"><label>Project link (optional)</label><input data-pf="url" data-i="${i}" value="${attr(p.url)}" placeholder="#" /></div>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ---------- Collect form -> data ---------- */
+    function collect() {
+      data.brand.name = val('b_name');
+      data.brand.accentWord = val('b_accent');
+      data.brand.logoText = val('b_logoText');
+      data.brand.logoImage = val('b_logoImage');
+      data.brand.tagline = val('b_tagline');
+      data.pills = val('b_pills').split(',').map(s => s.trim()).filter(Boolean);
+
+      data.socials.instagram = val('s_instagram') || '#';
+      data.socials.x = val('s_x') || '#';
+      data.socials.linkedin = val('s_linkedin') || '#';
+      data.socials.whatsapp = val('s_whatsapp');
+      data.socials.email = val('s_email');
+
+      document.querySelectorAll('#links-list [data-f]').forEach(el => {
+        const i = +el.dataset.i, f = el.dataset.f;
+        data.links[i][f] = (el.type === 'checkbox') ? el.checked : el.value;
+      });
+      document.querySelectorAll('#proj-list [data-pf]').forEach(el => {
+        const i = +el.dataset.i, f = el.dataset.pf;
+        data.projects[i][f] = el.value;
+      });
+    }
+
+    /* ---------- Actions ---------- */
+    document.getElementById('add-link').addEventListener('click', () => {
+      collect();
+      data.links.push({ id: uid('l'), title: 'New Link', sub: '', url: '#', icon: 'link', primary: false });
+      renderLinks();
+      dirty();
+    });
+
+    document.getElementById('add-proj').addEventListener('click', () => {
+      collect();
+      data.projects.push({ id: uid('p'), title: 'New Project', category: 'Web App', description: '', image: '', url: '#' });
+      renderProjects();
+      dirty();
+    });
+
+    document.getElementById('panel').addEventListener('click', e => {
+      const act = e.target.dataset.act; if (!act) return;
+      const i = +e.target.dataset.i;
+      collect();
+      if (act === 'del-link') data.links.splice(i, 1);
+      if (act === 'del-proj') data.projects.splice(i, 1);
+      if (act === 'up' && i > 0) swap(data.links, i, i - 1);
+      if (act === 'down' && i < data.links.length - 1) swap(data.links, i, i + 1);
+      if (act === 'pup' && i > 0) swap(data.projects, i, i - 1);
+      if (act === 'pdown' && i < data.projects.length - 1) swap(data.projects, i, i + 1);
+      renderLinks(); renderProjects(); dirty();
+    });
+
+    document.getElementById('save').addEventListener('click', async () => {
+      collect();
+      saveData(data); // local cache / offline fallback
+      if (usingSupabase) {
+        const btn = document.getElementById('save');
+        btn.disabled = true; btn.textContent = 'Publishing…';
+        try {
+          await pushRemote(data);
+          toast('Published ✓');
+          document.getElementById('status').textContent = 'All changes saved';
+        } catch (e) {
+          toast('Publish failed: ' + (e.message || e), true);
+        } finally {
+          btn.disabled = false; btn.textContent = 'Save & publish';
+        }
+      } else {
+        toast('Saved locally ✓');
+        document.getElementById('status').textContent = 'All changes saved';
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+      if (!confirm('Reset all content to defaults? This cannot be undone.')) return;
+      resetData(); data = loadData(); renderAll(); toast('Reset to defaults');
+    });
+
+    document.getElementById('export').addEventListener('click', () => {
+      collect();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'builtsell-content.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
+    document.getElementById('import-file').addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          data = Object.assign(loadData(), imported);
+          saveData(data); renderAll(); toast('Imported ✓');
+        } catch { toast('Invalid JSON file', true); }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // mark dirty on any input
+    document.getElementById('panel').addEventListener('input', dirty);
+
+    /* ---------- Helpers ---------- */
+    function dirty() { document.getElementById('status').textContent = 'Unsaved changes'; }
+    function swap(arr, a, b) { [arr[a], arr[b]] = [arr[b], arr[a]]; }
+    function val(id) { return document.getElementById(id).value; }
+    function set(id, v) { const el = document.getElementById(id); if (el) el.value = v ?? ''; }
+    function attr(s) { return String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+    let toastTimer;
+    function toast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.background = isErr ? 'var(--danger)' : 'var(--ok)';
+      t.style.color = isErr ? '#fff' : '#04241a';
+      t.classList.add('show'); clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+    }
+  </script>
+</body>
+</html>

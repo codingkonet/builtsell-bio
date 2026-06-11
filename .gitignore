@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+
+# temp / scratch scripts
+_*.mjs
+_*.js
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# logs
+*.log
